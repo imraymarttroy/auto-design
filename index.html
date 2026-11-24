@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Troy Auto Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Montserrat:wght@500;600;700;800&family=Poppins:wght@500;600;700;800&family=Oswald:wght@500;600;700&family=Bebas+Neue&family=Playfair+Display:wght@600;700;800&family=Roboto:wght@500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{
+  --blue:#30bced; --orange:#fc5130; --graphite:#303036; --paper:#fffaff; --black:#050401;
+  --bg:#fffaff; --surface:#ffffff; --line:rgba(48,48,54,.14); --line-strong:rgba(48,48,54,.28);
+  --ink:#050401; --muted:#5d5d66; --stage:#f1edf2; --on-blue:#050401; --on-orange:#050401;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#050401; --surface:#141417; --line:rgba(255,250,255,.10); --line-strong:rgba(255,250,255,.24);
+    --ink:#fffaff; --muted:#a8a8b2; --stage:#0d0d10; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#050401; --surface:#141417; --line:rgba(255,250,255,.10); --line-strong:rgba(255,250,255,.24);
+  --ink:#fffaff; --muted:#a8a8b2; --stage:#0d0d10; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Sora",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px clamp(16px,4vw,40px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px}
+.mark{width:34px;height:34px;border-radius:9px;background:var(--graphite);position:relative;overflow:hidden;flex:none}
+.mark::before{content:"";position:absolute;left:7px;right:7px;top:10px;height:4px;border-radius:2px;background:var(--blue)}
+.mark::after{content:"";position:absolute;left:7px;width:12px;top:18px;height:4px;border-radius:2px;background:var(--orange)}
+.brand h1{margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em}
+.brand p{margin:0;font-size:13px;color:var(--muted)}
+.count{font-size:13px;color:var(--muted)}
+
+main{display:grid;grid-template-columns:minmax(300px,380px) 1fr;min-height:calc(100vh - 76px)}
+aside{border-right:1px solid var(--line);padding:24px clamp(16px,3vw,28px);display:flex;flex-direction:column;gap:28px}
+.step h2{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-size:14px;font-weight:600}
+.step h2 .n{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line-strong);display:grid;place-items:center;font-size:11px;font-weight:600;color:var(--muted)}
+.step.done h2 .n{background:var(--blue);border-color:var(--blue);color:var(--on-blue)}
+
+.drop{display:flex;align-items:center;gap:14px;padding:16px;border:1.5px dashed var(--line-strong);border-radius:12px;cursor:pointer;background:var(--surface);transition:border-color .15s,background .15s}
+.drop:hover,.drop.over{border-color:var(--blue)}
+.drop input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.drop:focus-within{outline:2px solid var(--blue);outline-offset:2px}
+.drop .ico{width:40px;height:40px;border-radius:9px;background:var(--stage);display:grid;place-items:center;flex:none;overflow:hidden}
+.drop .ico img{width:100%;height:100%;object-fit:cover}
+.drop .ico svg{width:20px;height:20px;stroke:var(--muted)}
+.drop strong{display:block;font-size:14px;font-weight:600}
+.drop span{display:block;font-size:12.5px;color:var(--muted);word-break:break-word}
+.hint{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+.linkbtn{background:none;border:0;padding:0;color:var(--blue);font-weight:500;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+.seg{display:inline-flex;padding:3px;border-radius:9px;background:var(--stage);gap:2px}
+.seg button{border:0;background:none;padding:6px 14px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.seg button .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.field{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--muted)}
+.field.full{grid-column:1/-1}
+.field select,.field input[type=color]{height:36px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 8px}
+.field input[type=color]{padding:3px;cursor:pointer;width:100%}
+.field input[type=range]{width:100%;accent-color:var(--blue)}
+.field .row{display:flex;justify-content:space-between}
+.field .row b{color:var(--ink);font-weight:500}
+.check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);cursor:pointer}
+.check input{accent-color:var(--blue);width:16px;height:16px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--line-strong);background:var(--surface);font-weight:600;font-size:14px;cursor:pointer}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{width:100%;height:50px;background:var(--orange);border-color:var(--orange);color:var(--on-orange);font-size:15px}
+.btn.primary:not(:disabled):hover{filter:brightness(1.05)}
+.formats{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;font-size:13px;color:var(--muted)}
+.progress{height:4px;border-radius:2px;background:var(--stage);overflow:hidden;margin-top:12px;display:none}
+.progress.on{display:block}
+.progress i{display:block;height:100%;width:0;background:var(--blue);transition:width .1s}
+.status{font-size:12.5px;color:var(--muted);margin:8px 0 0;min-height:1.5em}
+
+.stage{display:flex;flex-direction:column;min-width:0;background:var(--stage)}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px clamp(16px,3vw,28px);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.nav{display:flex;align-items:center;gap:8px}
+.icon-btn{width:36px;height:36px;border-radius:9px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;cursor:pointer}
+.icon-btn:disabled{opacity:.4;cursor:not-allowed}
+.icon-btn svg{width:16px;height:16px;stroke:var(--ink)}
+.who{font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46vw}
+.who small{display:block;font-weight:400;font-size:12px;color:var(--muted)}
+.tip{font-size:12.5px;color:var(--muted)}
+.canvas-wrap{flex:1;display:grid;place-items:center;padding:clamp(16px,4vw,40px);min-height:420px}
+#preview{max-width:100%;max-height:calc(100vh - 220px);border-radius:6px;box-shadow:0 1px 0 var(--line),0 12px 40px rgba(5,4,1,.12);cursor:crosshair;touch-action:none;background:var(--surface)}
+#preview.dragging{cursor:grabbing}
+.empty{text-align:center;max-width:340px;color:var(--muted)}
+.empty .card{width:150px;height:220px;margin:0 auto 20px;border-radius:12px;border:1.5px dashed var(--line-strong);position:relative;background:var(--surface)}
+.empty .card::before{content:"";position:absolute;left:28px;right:28px;top:120px;height:10px;border-radius:5px;background:var(--blue);opacity:.7}
+.empty .card::after{content:"";position:absolute;left:44px;right:44px;top:142px;height:7px;border-radius:4px;background:var(--orange);opacity:.7}
+.empty strong{display:block;color:var(--ink);font-size:15px;margin-bottom:4px}
+
+.list{border-top:1px solid var(--line);background:var(--surface);max-height:240px;overflow:auto}
+.list table{width:100%;border-collapse:collapse;font-size:13px}
+.list th{position:sticky;top:0;background:var(--surface);text-align:left;font-weight:500;color:var(--muted);padding:10px clamp(16px,3vw,28px);border-bottom:1px solid var(--line)}
+.list td{padding:8px clamp(16px,3vw,28px);border-bottom:1px solid var(--line);cursor:pointer}
+.list .sel{width:44px;padding-right:0}
+.list .sel input{accent-color:var(--blue);width:16px;height:16px;cursor:pointer;vertical-align:middle}
+.list td.num{width:56px;color:var(--muted)}
+.list tr.picked td{background:rgba(252,81,48,.08)}
+.list tr:hover td{background:var(--stage)}
+.list tr.cur td{background:rgba(48,188,237,.12)}
+
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--graphite);color:var(--paper);padding:10px 16px;border-radius:10px;font-size:13.5px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:calc(100% - 32px)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:900px){
+  main{grid-template-columns:1fr}
+  aside{border-right:0;border-bottom:1px solid var(--line);order:2}
+  .stage{order:1}
+  #preview{max-height:62vh}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="mark" aria-hidden="true"></div>
+    <div>
+      <h1>Troy Auto Design</h1>
+      <p>Event IDs from one template and a name list</p>
+    </div>
+  </div>
+  <div class="count" id="headerCount">No names loaded</div>
+</header>
+
+<main>
+  <aside>
+    <section class="step" id="step1">
+      <h2><span class="n">1</span>Upload your template here</h2>
+      <label class="drop" id="dropTpl">
+        <input type="file" id="tplInput" accept="image/png,image/jpeg,image/webp">
+        <div class="ico" id="tplIco"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg></div>
+        <div><strong id="tplTitle">Choose an ID template</strong><span id="tplSub">PNG, JPG or WEBP · or drop it here</span></div>
+      </label>
+      <p class="hint">Use your highest-resolution export. Each ID is saved at the template’s exact size.</p>
+    </section>
+
+    <section class="step" id="step2">
+      <h2><span class="n">2</span>Upload your Excel file</h2>
+      <label class="drop" id="dropXls">
+        <input type="file" id="xlsInput" accept=".xlsx,.xls,.csv">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></div>
+        <div><strong id="xlsTitle">Choose a names and roles file</strong><span id="xlsSub">.xlsx, .xls or .csv · or drop it here</span></div>
+      </label>
+      <p class="hint">Use a “Name” column and a “Role” column. <button class="linkbtn" id="sampleBtn" type="button">Get a sample file</button></p>
+    </section>
+
+    <section class="step" id="step3">
+      <h2><span class="n">3</span>Position the text</h2>
+      <div class="seg" role="group" aria-label="Text layer">
+        <button type="button" data-layer="name" aria-pressed="true"><span class="dot" style="background:var(--blue)"></span>Name</button>
+        <button type="button" data-layer="role" aria-pressed="false"><span class="dot" style="background:var(--orange)"></span>Role</button>
+      </div>
+      <div class="controls">
+        <div class="field full"><label class="check"><input type="checkbox" data-k="show">Show this text on the ID</label></div>
+        <label class="field">Font
+          <select data-k="font">
+            <option>Montserrat</option><option>Poppins</option><option>Oswald</option><option>Bebas Neue</option><option>Playfair Display</option><option>Roboto</option>
+          </select>
+        </label>
+        <label class="field">Weight
+          <select data-k="weight">
+            <option value="500">Medium</option><option value="600">Semibold</option><option value="700">Bold</option><option value="800">Extra bold</option>
+          </select>
+        </label>
+        <label class="field full"><span class="row">Size <b id="sizeVal">—</b></span><input type="range" data-k="size" min="0.01" max="0.2" step="0.001"></label>
+        <label class="field full"><span class="row">Max width <b id="maxVal">—</b></span><input type="range" data-k="maxW" min="0.2" max="1" step="0.01"></label>
+        <label class="field">Color<input type="color" data-k="color"></label>
+        <div class="field">Align
+          <div class="seg" role="group" aria-label="Alignment" id="alignSeg">
+            <button type="button" data-align="left" aria-pressed="false">Left</button>
+            <button type="button" data-align="center" aria-pressed="true">Center</button>
+            <button type="button" data-align="right" aria-pressed="false">Right</button>
+          </div>
+        </div>
+        <div class="field full"><label class="check"><input type="checkbox" data-k="upper">All capital letters</label></div>
+      </div>
+      <p class="hint">Drag the text on the preview, or click where it should go. Long names shrink to fit the max width.</p>
+    </section>
+
+    <section class="step" id="step4">
+      <h2><span class="n">4</span>Download</h2>
+      <div class="formats">
+        <span>File type</span>
+        <div class="seg" role="group" aria-label="File type" id="fmtSeg">
+          <button type="button" data-fmt="png" aria-pressed="true">PNG</button>
+          <button type="button" data-fmt="jpg" aria-pressed="false">JPG</button>
+        </div>
+      </div>
+      <button class="btn primary" id="dlAll" type="button" disabled>Download all IDs</button>
+      <div class="progress" id="prog"><i></i></div>
+      <p class="status" id="status">Add a template and a name list to start.</p>
+    </section>
+  </aside>
+
+  <section class="stage">
+    <div class="toolbar">
+      <div class="nav">
+        <button class="icon-btn" id="prev" type="button" aria-label="Previous name" disabled><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+        <button class="icon-btn" id="next" type="button" aria-label="Next name" disabled><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+        <div class="who" id="who">Sample preview<small>Juan Dela Cruz · Event Staff</small></div>
+      </div>
+      <button class="btn" id="dlOne" type="button" disabled>Download this ID</button>
+    </div>
+    <div class="canvas-wrap" id="wrap">
+      <div class="empty" id="empty">
+        <div class="card" aria-hidden="true"></div>
+        <strong>Your ID preview appears here</strong>
+        Upload a template to place the name and role on it.
+      </div>
+      <canvas id="preview" tabindex="0" aria-label="ID preview. Drag to move the selected text; arrow keys nudge it." hidden></canvas>
+    </div>
+    <div class="list" id="list" hidden>
+      <table><thead><tr><th class="sel"><input type="checkbox" id="selAll" aria-label="Select all names"></th><th>#</th><th>Name</th><th>Role</th></tr></thead><tbody id="rows"></tbody></table>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const SAMPLE = {name:"Juan Dela Cruz", role:"Event Staff"};
+  const DEFAULTS = {
+    name:{x:.5,y:.62,size:.075,font:"Montserrat",weight:800,color:"#050401",align:"center",upper:true,maxW:.82,show:true},
+    role:{x:.5,y:.70,size:.042,font:"Montserrat",weight:600,color:"#303036",align:"center",upper:false,maxW:.82,show:true}
+  };
+  const S = {img:null,w:0,h:0,people:[],sel:new Set(),idx:0,active:"name",fmt:"png",boxes:{},drag:null,snap:false,busy:false,
+    layers:JSON.parse(JSON.stringify(DEFAULTS))};
+  try{const saved=JSON.parse(localStorage.getItem("tad-layers")||"null"); if(saved&&saved.name&&saved.role) S.layers={name:{...DEFAULTS.name,...saved.name},role:{...DEFAULTS.role,...saved.role}};}catch(e){}
+  const persist=()=>{try{localStorage.setItem("tad-layers",JSON.stringify(S.layers))}catch(e){}};
+
+  let downloadsP = Promise.resolve(null);
+  try{ if(window.claude&&typeof window.claude.use==="function") downloadsP = window.claude.use("downloads").catch(()=>null); }catch(e){}
+
+  const canvas=$("#preview"), ctx=canvas.getContext("2d");
+  let toastT;
+  function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("on");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("on"),3200)}
+  function setStatus(m){$("#status").textContent=m}
+
+  /* ---------- rendering ---------- */
+  function fontStr(L,px){return `${L.weight} ${px}px "${L.font}", system-ui, sans-serif`}
+  async function ensureFonts(){
+    const loads=["name","role"].map(k=>{const L=S.layers[k];return document.fonts.load(fontStr(L,40),"AaÑñ")});
+    try{await Promise.all(loads)}catch(e){}
+  }
+  function drawID(c,w,h,person,guides){
+    c.clearRect(0,0,w,h);
+    c.drawImage(S.img,0,0,w,h);
+    const boxes={};
+    for(const k of ["name","role"]){
+      const L=S.layers[k]; let t=(person[k]||"").trim();
+      if(!L.show) continue;
+      if(!t&&guides) t=k==="name"?"Name":"Role";
+      if(!t) continue;
+      if(L.upper) t=t.toLocaleUpperCase();
+      let px=L.size*w; c.font=fontStr(L,px);
+      let m=c.measureText(t).width; const max=L.maxW*w;
+      if(m>max&&m>0){px*=max/m;c.font=fontStr(L,px);m=c.measureText(t).width}
+      const x=L.x*w, y=L.y*h;
+      c.fillStyle=L.color; c.textAlign=L.align; c.textBaseline="middle";
+      c.fillText(t,x,y);
+      const left=L.align==="center"?x-m/2:L.align==="left"?x:x-m;
+      boxes[k]={x:left,y:y-px*.62,w:m,h:px*1.24};
+    }
+    if(guides){
+      const lw=Math.max(2,w/450), pad=lw*4;
+      for(const k of ["name","role"]){
+        const b=boxes[k]; if(!b) continue;
+        const on=S.active===k;
+        c.save();
+        c.strokeStyle=k==="name"?"#30bced":"#fc5130";
+        c.lineWidth=on?lw*1.4:lw; c.globalAlpha=on?1:.55;
+        c.setLineDash(on?[]:[lw*4,lw*3]);
+        c.strokeRect(b.x-pad,b.y-pad,b.w+pad*2,b.h+pad*2);
+        c.restore();
+      }
+      if(S.drag&&S.snap){c.save();c.strokeStyle="#30bced";c.lineWidth=lw;c.setLineDash([lw*5,lw*4]);c.beginPath();c.moveTo(w/2,0);c.lineTo(w/2,h);c.stroke();c.restore()}
+    }
+    return boxes;
+  }
+  function current(){return S.people[S.idx]||SAMPLE}
+  function redraw(){
+    if(!S.img) return;
+    S.boxes=drawID(ctx,S.w,S.h,current(),true);
+  }
+
+  /* ---------- template ---------- */
+  function loadTemplate(file){
+    if(!file) return;
+    if(!/^image\/(png|jpe?g|webp)$/.test(file.type)){toast("That file isn’t a PNG, JPG or WEBP image.");return}
+    const url=URL.createObjectURL(file); const img=new Image();
+    img.onload=async()=>{
+      S.img=img;S.w=img.naturalWidth;S.h=img.naturalHeight;
+      canvas.width=S.w;canvas.height=S.h;canvas.hidden=false;$("#empty").hidden=true;
+      $("#tplIco").innerHTML="";const th=document.createElement("img");th.src=url;th.alt="";$("#tplIco").appendChild(th);
+      $("#tplTitle").textContent=file.name;$("#tplSub").textContent=`${S.w} × ${S.h} px · click to replace`;
+      $("#step1").classList.add("done");
+      await ensureFonts(); syncControls(); redraw(); refreshUI();
+    };
+    img.onerror=()=>toast("This image couldn’t be opened. Try exporting it again as PNG.");
+    img.src=url;
+  }
+
+  /* ---------- excel ---------- */
+  function loadList(file){
+    if(!file) return;
+    if(typeof XLSX==="undefined"){toast("The spreadsheet reader didn’t load. Check your connection and reload.");return}
+    const r=new FileReader();
+    r.onload=e=>{
+      try{
+        const wb=XLSX.read(new Uint8Array(e.target.result),{type:"array"});
+        const sh=wb.Sheets[wb.SheetNames[0]];
+        const rows=XLSX.utils.sheet_to_json(sh,{header:1,defval:"",raw:false}).filter(r=>r.some(c=>String(c).trim()));
+        if(!rows.length){toast("This file has no rows. Add names in the first sheet.");return}
+        const head=rows[0].map(c=>String(c).trim().toLowerCase());
+        let ni=head.findIndex(h=>/^(full\s*)?name|pangalan|participant|attendee/.test(h));
+        let ri=head.findIndex(h=>/role|position|designation|title|tungkulin|posisyon|department/.test(h));
+        let body=rows;
+        if(ni>=0||ri>=0){body=rows.slice(1); if(ni<0) ni=ri===0?1:0; }
+        else {ni=0;ri=rows[0].length>1?1:-1}
+        const people=body.map(r=>({name:String(r[ni]??"").trim(),role:ri>=0?String(r[ri]??"").trim():""})).filter(p=>p.name);
+        if(!people.length){toast("No names found. Put names in a column titled “Name”.");return}
+        S.people=people;S.idx=0;S.sel=new Set();
+        $("#xlsTitle").textContent=file.name;
+        $("#xlsSub").textContent=`${people.length} ${people.length===1?"name":"names"} found · click to replace`;
+        $("#step2").classList.add("done");
+        buildList(); redraw(); refreshUI();
+      }catch(err){toast("This file couldn’t be read. Save it as .xlsx or .csv and try again.")}
+    };
+    r.readAsArrayBuffer(file);
+  }
+  function buildList(){
+    const tb=$("#rows");tb.textContent="";
+    S.people.forEach((p,i)=>{
+      const tr=document.createElement("tr");tr.dataset.i=i;
+      const ct=document.createElement("td");ct.className="sel";
+      const cb=document.createElement("input");cb.type="checkbox";cb.setAttribute("aria-label",`Select ${p.name}`);cb.checked=S.sel.has(i);
+      cb.addEventListener("click",e=>e.stopPropagation());
+      cb.addEventListener("change",()=>{cb.checked?S.sel.add(i):S.sel.delete(i);refreshUI()});
+      ct.addEventListener("click",e=>{if(e.target===ct)cb.click();e.stopPropagation()});
+      ct.appendChild(cb);tr.appendChild(ct);
+      [String(i+1),p.name,p.role||"—"].forEach((v,j)=>{const td=document.createElement("td");td.textContent=v;if(j===0)td.className="num";tr.appendChild(td)});
+      tr.addEventListener("click",()=>{S.idx=i;redraw();refreshUI()});
+      tb.appendChild(tr);
+    });
+    $("#list").hidden=!S.people.length;
+  }
+
+  function refreshUI(){
+    const n=S.people.length, p=current();
+    $("#headerCount").textContent=n?`${n} ${n===1?"ID":"IDs"} ready`:"No names loaded";
+    const who=$("#who");who.textContent="";
+    who.append(n?`${S.idx+1} of ${n}`:"Sample preview");
+    const sm=document.createElement("small");sm.textContent=p.role?`${p.name} · ${p.role}`:p.name;who.appendChild(sm);
+    $("#prev").disabled=!n||S.idx===0;$("#next").disabled=!n||S.idx>=n-1;
+    const ns=S.sel.size;
+    $("#dlOne").disabled=!S.img||S.busy;
+    $("#dlOne").textContent=ns?`Download selected (${ns})`:"Download this ID";
+    const sa=$("#selAll");sa.checked=n>0&&ns===n;sa.indeterminate=ns>0&&ns<n;
+    document.querySelectorAll("#rows tr").forEach(tr=>tr.classList.toggle("picked",S.sel.has(+tr.dataset.i)));
+    $("#dlAll").disabled=!S.img||!n||S.busy;
+    $("#dlAll").textContent=n?`Download all ${n} ${n===1?"ID":"IDs"}`:"Download all IDs";
+    document.querySelectorAll("#rows tr").forEach(tr=>tr.classList.toggle("cur",+tr.dataset.i===S.idx));
+    const cur=document.querySelector("#rows tr.cur"); if(cur) cur.scrollIntoView({block:"nearest"});
+    if(!S.busy){
+      if(!S.img&&!n) setStatus("Add a template and a name list to start.");
+      else if(!S.img) setStatus("Now add your ID template.");
+      else if(!n) setStatus("Now add your names and roles file.");
+      else {setStatus(`IDs save at ${S.w} × ${S.h} px, bundled in one ZIP file.`);$("#step3").classList.add("done")}
+    }
+  }
+
+  /* ---------- controls ---------- */
+  function syncControls(){
+    const L=S.layers[S.active];
+    document.querySelectorAll("[data-layer]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.layer===S.active));
+    document.querySelectorAll("[data-k]").forEach(el=>{
+      const k=el.dataset.k;
+      if(el.type==="checkbox") el.checked=!!L[k]; else el.value=L[k];
+    });
+    document.querySelectorAll("[data-align]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.align===L.align));
+    $("#sizeVal").textContent=S.w?`${Math.round(L.size*S.w)} px`:`${Math.round(L.size*1000)/10}%`;
+    $("#maxVal").textContent=`${Math.round(L.maxW*100)}%`;
+  }
+  document.querySelectorAll("[data-layer]").forEach(b=>b.addEventListener("click",()=>{S.active=b.dataset.layer;syncControls();redraw()}));
+  document.querySelectorAll("[data-k]").forEach(el=>{
+    const ev=el.tagName==="SELECT"||el.type==="checkbox"?"change":"input";
+    el.addEventListener(ev,async()=>{
+      const L=S.layers[S.active],k=el.dataset.k;
+      L[k]=el.type==="checkbox"?el.checked:(k==="size"||k==="maxW"||k==="weight")?parseFloat(el.value):el.value;
+      if(k==="font"||k==="weight") await ensureFonts();
+      syncControls();redraw();persist();
+    });
+  });
+  document.querySelectorAll("[data-align]").forEach(b=>b.addEventListener("click",()=>{S.layers[S.active].align=b.dataset.align;syncControls();redraw();persist()}));
+  document.querySelectorAll("[data-fmt]").forEach(b=>b.addEventListener("click",()=>{S.fmt=b.dataset.fmt;document.querySelectorAll("[data-fmt]").forEach(x=>x.setAttribute("aria-pressed",x===b))}));
+
+  /* ---------- drag on preview ---------- */
+  function toImg(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*S.w/r.width,y:(e.clientY-r.top)*S.h/r.height}}
+  function hit(p){
+    const pad=Math.max(12,S.w/60);
+    for(const k of [S.active,S.active==="name"?"role":"name"]){
+      const b=S.boxes[k]; if(b&&p.x>=b.x-pad&&p.x<=b.x+b.w+pad&&p.y>=b.y-pad&&p.y<=b.y+b.h+pad) return k;
+    }
+    return null;
+  }
+  canvas.addEventListener("pointerdown",e=>{
+    if(!S.img) return;
+    const p=toImg(e), k=hit(p);
+    if(k){S.active=k;syncControls()}
+    const L=S.layers[S.active];
+    if(!k){L.x=p.x/S.w;L.y=p.y/S.h}
+    S.drag={dx:L.x*S.w-p.x,dy:L.y*S.h-p.y};
+    canvas.setPointerCapture(e.pointerId);canvas.classList.add("dragging");redraw();
+  });
+  canvas.addEventListener("pointermove",e=>{
+    if(!S.drag) return;
+    const p=toImg(e),L=S.layers[S.active];
+    let x=(p.x+S.drag.dx)/S.w, y=(p.y+S.drag.dy)/S.h;
+    S.snap=L.align==="center"&&Math.abs(x-.5)<.012; if(S.snap) x=.5;
+    L.x=Math.min(1,Math.max(0,x));L.y=Math.min(1,Math.max(0,y));redraw();
+  });
+  const end=()=>{if(!S.drag)return;S.drag=null;S.snap=false;canvas.classList.remove("dragging");redraw();persist()};
+  canvas.addEventListener("pointerup",end);canvas.addEventListener("pointercancel",end);
+  canvas.addEventListener("keydown",e=>{
+    const d={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key]; if(!d||!S.img) return;
+    e.preventDefault();const step=e.shiftKey?10:1,L=S.layers[S.active];
+    L.x=Math.min(1,Math.max(0,L.x+d[0]*step/S.w));L.y=Math.min(1,Math.max(0,L.y+d[1]*step/S.h));redraw();persist();
+  });
+
+  $("#selAll").addEventListener("change",e=>{
+    const on=e.target.checked;
+    S.sel=on?new Set(S.people.map((_,i)=>i)):new Set();
+    document.querySelectorAll("#rows td.sel input").forEach(c=>c.checked=on);
+    refreshUI();
+  });
+  $("#prev").addEventListener("click",()=>{if(S.idx>0){S.idx--;redraw();refreshUI()}});
+  $("#next").addEventListener("click",()=>{if(S.idx<S.people.length-1){S.idx++;redraw();refreshUI()}});
+
+  /* ---------- uploads ---------- */
+  $("#tplInput").addEventListener("change",e=>{loadTemplate(e.target.files[0]);e.target.value=""});
+  $("#xlsInput").addEventListener("change",e=>{loadList(e.target.files[0]);e.target.value=""});
+  [["#dropTpl",loadTemplate],["#dropXls",loadList]].forEach(([sel,fn])=>{
+    const z=$(sel);
+    ["dragenter","dragover"].forEach(t=>z.addEventListener(t,e=>{e.preventDefault();z.classList.add("over")}));
+    ["dragleave","drop"].forEach(t=>z.addEventListener(t,e=>{e.preventDefault();z.classList.remove("over")}));
+    z.addEventListener("drop",e=>fn(e.dataTransfer.files[0]));
+  });
+
+  /* ---------- saving ---------- */
+  async function saveFile(filename,data){
+    const dl=await downloadsP;
+    if(dl){
+      try{await dl.save({filename,data});return true}
+      catch(err){
+        const c=err&&err.code;
+        if(c==="declined") toast("Download cancelled.");
+        else if(c==="rate_limited") toast("Another download is waiting for your confirmation.");
+        else if(c==="too_large") toast("The file is too large for this app. Try JPG instead of PNG.");
+        else if(c==="host_unavailable") toast("This app can’t save files. Open the page in a browser to download.");
+        else toast("The download couldn’t start here. Open the page in a browser and try again.");
+        return false;
+      }
+    }
+    const url=URL.createObjectURL(data instanceof Blob?data:new Blob([data]));
+    const a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),4000);return true;
+  }
+  const slug=s=>s.normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^\w\s-]/g,"").trim().replace(/\s+/g,"-").slice(0,60)||"id";
+  function toBlob(c){
+    const type=S.fmt==="jpg"?"image/jpeg":"image/png";
+    return new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(new Error("encode")),type,.96));
+  }
+  async function renderPerson(p){
+    const off=document.createElement("canvas");off.width=S.w;off.height=S.h;
+    const c=off.getContext("2d");
+    if(S.fmt==="jpg"){c.fillStyle="#ffffff";c.fillRect(0,0,S.w,S.h)}
+    drawID(c,S.w,S.h,p,false);
+    return toBlob(off);
+  }
+
+  $("#dlOne").addEventListener("click",async()=>{
+    if(!S.img||S.busy) return;
+    const picked=[...S.sel].sort((a,b)=>a-b).map(i=>({p:S.people[i],i}));
+    if(picked.length>1){exportZip(picked,`troy-auto-design-selected-${S.fmt}.zip`);return}
+    await ensureFonts();
+    const p=picked.length?picked[0].p:current(), blob=await renderPerson(p);
+    const ok=await saveFile(`${slug(p.name)}.${S.fmt}`,blob);
+    if(ok) toast(`Saved ${p.name}’s ID.`);
+  });
+
+  async function exportZip(items,zipName){
+    if(!S.img||!items.length||S.busy) return;
+    if(typeof JSZip==="undefined"){toast("The ZIP tool didn’t load. Check your connection and reload.");return}
+    S.busy=true;refreshUI();
+    const prog=$("#prog"),bar=prog.querySelector("i");prog.classList.add("on");bar.style.width="0";
+    try{
+      await ensureFonts();
+      const zip=new JSZip(), n=items.length, pad=String(S.people.length).length, used=new Set();
+      for(let i=0;i<n;i++){
+        const {p,i:idx}=items[i];
+        let base=`${String(idx+1).padStart(Math.max(pad,2),"0")}-${slug(p.name)}`;
+        while(used.has(base)) base+="-1"; used.add(base);
+        zip.file(`${base}.${S.fmt}`,await renderPerson(p));
+        bar.style.width=`${((i+1)/n)*85}%`;
+        setStatus(`Creating ID ${i+1} of ${n}…`);
+        if(i%5===4) await new Promise(r=>setTimeout(r,0));
+      }
+      setStatus("Packing the ZIP file…");
+      const out=await zip.generateAsync({type:"blob",compression:"STORE"},m=>{bar.style.width=`${85+m.percent*.15}%`});
+      bar.style.width="100%";
+      const ok=await saveFile(zipName,out);
+      S.busy=false;refreshUI();
+      if(ok){setStatus(`Saved ${n} ${n===1?"ID":"IDs"} in one ZIP file.`);toast("All IDs downloaded.")}
+    }catch(err){
+      S.busy=false;refreshUI();toast("Something stopped the export. Try again, or switch to JPG for very large templates.");
+    }finally{setTimeout(()=>prog.classList.remove("on"),900)}
+  }
+  $("#dlAll").addEventListener("click",()=>exportZip(S.people.map((p,i)=>({p,i})),`troy-auto-design-ids-${S.fmt}.zip`));
+
+  $("#sampleBtn").addEventListener("click",async()=>{
+    const csv="Name,Role\nJuan Dela Cruz,Event Staff\nMaria Santos,Speaker\nJose Reyes,Volunteer\nAna Bautista,Organizer\n";
+    if(await saveFile("names-and-roles-sample.csv",csv)) toast("Sample file saved. Open it in Excel and replace the names.");
+  });
+
+  syncControls();refreshUI();
+})();
+</script>
+</body>
+</html>
